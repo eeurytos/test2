@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Starry Sky</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #000;
+      height: 100%;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="sky"></canvas>
+
+  <script>
+    const canvas = document.getElementById('sky');
+    const ctx = canvas.getContext('2d');
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    const STAR_COUNT = 150;
+    const stars = [];
+    const selected = [];
+    const pointer = {x: width/2, y: height/2};
+
+    function createStars() {
+      for (let i = 0; i < STAR_COUNT; i++) {
+        stars.push({
+          x: Math.random()*width,
+          y: Math.random()*height,
+          size: Math.random()*2+1,
+          baseAlpha: Math.random()*0.5 + 0.5,
+          selected: false
+        });
+      }
+    }
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resize);
+    window.addEventListener('mousemove', e => {
+      pointer.x = e.clientX;
+      pointer.y = e.clientY;
+    });
+    window.addEventListener('click', () => {
+      const star = getHoveredStar();
+      if (star && !star.selected) {
+        star.selected = true;
+        selected.push(star);
+      }
+    });
+
+    function getHoveredStar() {
+      for (const s of stars) {
+        const dx = s.x - pointer.x;
+        const dy = s.y - pointer.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 10) return s;
+      }
+      return null;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+      const offsetX = (pointer.x - width/2) * 0.02;
+      const offsetY = (pointer.y - height/2) * 0.02;
+      ctx.save();
+      ctx.translate(offsetX, offsetY);
+
+      for (const s of stars) {
+        const dx = s.x - pointer.x + offsetX;
+        const dy = s.y - pointer.y + offsetY;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        let alpha = s.baseAlpha;
+        if (dist < 20) {
+          alpha = 1;
+        }
+        if (s.selected) {
+          alpha = 1;
+        }
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI*2);
+        ctx.fill();
+      }
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let i=0; i<selected.length; i++) {
+        const s = selected[i];
+        if (i === 0) ctx.moveTo(s.x, s.y);
+        else ctx.lineTo(s.x, s.y);
+      }
+      ctx.stroke();
+
+      ctx.restore();
+      requestAnimationFrame(draw);
+    }
+
+    createStars();
+    draw();
+  </script>
+</body>
+</html>
